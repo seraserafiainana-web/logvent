@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>POS Pro - Gestion de Magasin Professionnelle</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.0/dist/pouchdb.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>📊 POS PRO — Système de Gestion Professionnel</h1>
+    <div id="user-area"></div>
+  </header>
+
+  <nav id="main-nav">
+    <button data-tab="dashboard" data-permission="">📈 Tableau de Bord</button>
+    <button data-tab="products" data-permission="products">📦 Produits</button>
+    <button data-tab="sales" data-permission="sales">💳 Ventes</button>
+    <button data-tab="clients" data-permission="clients">👥 Clients</button>
+    <button data-tab="stock" data-permission="stock">📊 Stock</button>
+    <button data-tab="reports" data-permission="reports">📋 Rapports</button>
+    <button data-tab="users" data-permission="">👨‍💼 Utilisateurs</button>
+    <button data-tab="settings" data-permission="">⚙️ Paramètres</button>
+  </nav>
+
+  <main>
+    <!-- ==================== AUTHENTICATION ==================== -->
+    <section id="auth" class="tab">
+      <h2>🔐 Authentification</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 600px;">
+        <div>
+          <h3>Se Connecter</h3>
+          <div class="form-group">
+            <label>Identifiant</label>
+            <input id="login-username" placeholder="ex: admin" />
+          </div>
+          <div class="form-group">
+            <label>Mot de passe</label>
+            <input id="login-password" type="password" placeholder="●●●●●" />
+          </div>
+          <button id="btn-login" class="primary">Connexion</button>
+          <p style="font-size: 12px; color: #666; margin-top: 16px;">
+            <strong>Compte de démonstration:</strong><br>
+            admin / admin (admin complet)<br>
+            cashier / cashier (caissier)<br>
+            manager / manager (gestionnaire)
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <section id="dashboard" class="tab hidden">
+      <h2>📈 Tableau de Bord</h2>
+      <div id="dashboard-stats"></div>
+    </section>
+
+    <!-- ==================== PRODUCTS ==================== -->
+    <section id="products" class="tab hidden">
+      <h2>📦 Gestion des Produits</h2>
+      <form id="product-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Nom du produit *</label>
+            <input id="p-name" placeholder="ex: Riz 5kg" required />
+          </div>
+          <div class="form-group">
+            <label>Catégorie</label>
+            <input id="p-category" placeholder="ex: Alimentaire" />
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>SKU / Référence</label>
+            <input id="p-sku" placeholder="ex: RIZ001" />
+          </div>
+          <div class="form-group">
+            <label>Coût (Ar) *</label>
+            <input id="p-cost" type="number" placeholder="0" required />
+          </div>
+          <div class="form-group">
+            <label>Prix (Ar) *</label>
+            <input id="p-price" type="number" placeholder="0" required />
+          </div>
+          <div class="form-group">
+            <label>Stock *</label>
+            <input id="p-stock" type="number" placeholder="0" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Code-barres</label>
+          <input id="p-barcode" placeholder="ex: 3123456789" />
+        </div>
+        <button type="submit" class="primary">✅ Ajouter / Mettre à jour</button>
+      </form>
+      <h3 style="margin-top: 32px;">Liste des Produits</h3>
+      <table id="products-table">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Catégorie</th>
+            <th>SKU</th>
+            <th>Prix (Ar)</th>
+            <th>Stock</th>
+            <th>Profit Potentiel</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- ==================== SALES ==================== -->
+    <section id="sales" class="tab hidden">
+      <h2>💳 Ventes et Caisse</h2>
+      <form id="sale-form">
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 12px; align-items: flex-end;">
+          <div class="form-group">
+            <label>Produit</label>
+            <select id="sale-product"></select>
+          </div>
+          <div class="form-group">
+            <label>Quantité</label>
+            <input id="sale-qty" type="number" value="1" min="1" />
+          </div>
+          <div class="form-group">
+            <label>Remise (Ar)</label>
+            <input id="sale-discount" type="number" value="0" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Client</label>
+            <select id="sale-client">
+              <option value="">— Aucun —</option>
+            </select>
+          </div>
+          <button type="submit" class="success">💰 Enregistrer</button>
+        </div>
+      </form>
+
+      <h3 style="margin-top: 32px;">📊 Historique des Ventes</h3>
+      <table id="sales-table">
+        <thead>
+          <tr>
+            <th>Date/Heure</th>
+            <th>Produit</th>
+            <th>Qty</th>
+            <th>Prix Unit.</th>
+            <th>Remise</th>
+            <th>Total (Ar)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- ==================== CLIENTS ==================== -->
+    <section id="clients" class="tab hidden">
+      <h2>👥 Gestion des Clients</h2>
+      <form id="client-form">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Nom *</label>
+            <input id="c-name" placeholder="ex: Jean Dupont" required />
+          </div>
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input id="c-phone" placeholder="ex: +261 32 XX XX XX" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input id="c-email" type="email" placeholder="ex: jean@email.com" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Adresse</label>
+          <input id="c-address" placeholder="ex: 123 Rue de la Paix, Antananarivo" />
+        </div>
+        <button type="submit" class="primary">➕ Ajouter Client</button>
+      </form>
+
+      <h3 style="margin-top: 32px;">📋 Liste des Clients</h3>
+      <table id="clients-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Téléphone</th>
+            <th>Email</th>
+            <th>Total Achats (Ar)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- ==================== STOCK ==================== -->
+    <section id="stock" class="tab hidden">
+      <h2>📊 Gestion du Stock</h2>
+      <p style="color: #5f6368;">Vue globale du stock avec alertes en temps réel</p>
+      <table id="stock-table">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>SKU</th>
+            <th>Stock Actuel</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- ==================== REPORTS ==================== -->
+    <section id="reports" class="tab hidden">
+      <h2>📋 Rapports et Statistiques</h2>
+      <div class="grid-2">
+        <div>
+          <h3>Rapport Quotidien</h3>
+          <button class="primary" onclick="showDailyReport()">📅 Générer Rapport Aujourd'hui</button>
+        </div>
+        <div>
+          <h3>Rapport Mensuel</h3>
+          <button class="primary" onclick="showMonthlyReport()">📅 Générer Rapport Mois</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== USERS MANAGEMENT ==================== -->
+    <section id="users" class="tab hidden">
+      <h2>👨‍💼 Gestion des Utilisateurs</h2>
+      <div id="users-section">
+        <button id="btn-admin-create-user" class="primary">➕ Créer Nouvel Utilisateur</button>
+        <h3 style="margin-top: 24px;">📋 Liste des Utilisateurs</h3>
+        <table id="users-table">
+          <thead>
+            <tr>
+              <th>Nom d'utilisateur</th>
+              <th>Rôle</th>
+              <th>Statut</th>
+              <th>Date de Création</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== SETTINGS ==================== -->
+    <section id="settings" class="tab hidden">
+      <h2>⚙️ Paramètres</h2>
+      <div class="grid-2">
+        <div>
+          <h3>📦 Sauvegarde / Restauration</h3>
+          <button class="primary" onclick="exportDB()">💾 Exporter BD (JSON)</button>
+          <button class="secondary" onclick="document.getElementById('import-file').click()">📥 Importer BD (JSON)</button>
+          <input type="file" id="import-file" accept="application/json" style="display:none" />
+        </div>
+        <div>
+          <h3>🔄 Synchronisation</h3>
+          <div class="form-group">
+            <label>URL CouchDB Distant</label>
+            <input id="sync-url" placeholder="http(s)://host:5984/dbname" />
+          </div>
+          <button class="primary" onclick="syncDatabase()">🔄 Démarrer Sync</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
